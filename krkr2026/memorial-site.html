@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<!--
+  紀念網站範本
+  =================================================
+  頁面流程：票券首頁（Enter）→ 角色開場對話（可 Skip）→
+  手記頁（點右側 9/4~9/15 日期熱區看作品）→ 企劃頁（含參與人員彈窗）
+
+  怎麼編輯內容：
+  1. 打開這個檔案（用記事本、VS Code 或任何文字編輯器都可以）
+  2. 拉到最下面 <script> 區塊，找到 "== 內容資料區 ==" 的註解
+  3. 裡面是幾個資料（CREDITS / DIALOGUE / JOURNAL_DATES / JOURNAL_WORKS），
+     依照範例格式增加、刪除或修改項目即可，不需要動版面的程式碼
+  4. 首頁圖片在 <section id="landing"> 裡面，換 src 就好
+  5. 企劃頁的文字直接在 <section id="plan-page"> 裡面改
+  =================================================
+-->
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ticket 紀念企劃</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600&family=Noto+Sans+TC:wght@300;400;500;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf9f6;
+    --paper-dim:#f1efe9;
+    --ink:#1c1c1b;
+    --ink-soft:#5c5a52;
+    --ink-faint:#9a978c;
+    --line:#dcd8cc;
+    --moss:#6e7b62;
+    --moss-soft:#e4e8df;
+    --amber:#c9a15a;
+    --stage-bg:#1c1c1b;
+    --line-strong:#c7c2b3;
+    --stamp:#a8443a;
+
+    --serif:'Noto Serif TC', serif;
+    --sans:'Noto Sans TC', sans-serif;
+  }
+
+  *{box-sizing:border-box; margin:0; padding:0;}
+
+  /* ---------- 場景轉場黑幕 ---------- */
+  #transition-veil{
+    position:fixed; inset:0; z-index:50;
+    background:#000;
+    opacity:0;
+    pointer-events:none;
+    transition:opacity .6s ease;
+  }
+  #transition-veil.show{ opacity:1; }
+  html{scroll-behavior:smooth;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-weight:300;
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  ::selection{background:var(--moss-soft); color:var(--ink);}
+
+  a{color:inherit;}
+  button{font-family:inherit; cursor:pointer; background:none; border:none;}
+
+  /* ---------- 首頁粒子（低調的紀念意象：微光不滅） ----------
+     這個 div 放在 #landing 裡面、.art-frame 前面，
+     所以會顯示在深色背景「上面」、票券圖片「下面」，
+     以票券為中心，往外、往上緩慢飄散（每顆的擴散方向由 JS
+     算好後透過 --dx / --dy 這兩個 CSS 變數帶進來） */
+  #landing-particles{
+    position:fixed; inset:0; pointer-events:none; overflow:hidden; z-index:0;
+  }
+  .particle{
+    position:absolute;
+    border-radius:50%;
+    background:#faf9f6;
+    opacity:0;
+    animation:drift linear infinite;
+    --dx:0px; --dy:-160px;
+  }
+  @keyframes drift{
+    0%{   opacity:0;   transform:translate(0,0) scale(.7); }
+    12%{  opacity:.55; }
+    82%{  opacity:.3; }
+    100%{ opacity:0;   transform:translate(var(--dx), var(--dy)) scale(1.15); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .particle{ animation:none; display:none; }
+    html{ scroll-behavior:auto; }
+  }
+
+  /* ---------- 首頁：完全由你自己畫的圖片決定 ----------
+     使用方式：
+     1. 把整個首頁畫成一張完整的圖（票券外框、文字、GIF 框、按鈕
+        全部畫進去），存成 images/page-home.png
+     2. .art-enter 是「看不見的按鈕」，蓋在你圖片畫的 Enter 位置上，
+        用 top / left / width / height 四個百分比對位——先把
+        background 改成 rgba(255,0,0,.35) 就能看到紅框現在蓋在哪，
+        調整數字對好之後，再改回 transparent
+     3. 之後其他分頁（時間軸／同人創作／致謝）想比照辦理，
+        做法完全一樣：畫一張圖 → 用 .art-frame 結構包起來 →
+        需要互動的地方（按鈕、連結）疊上透明按鈕/連結對位即可，
+        跟我說要換哪個分頁，我可以直接幫你接上去
+     ================================================== */
+  #landing{
+    position:fixed; inset:0; z-index:5;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    background:var(--stage-bg);
+    transition:opacity .8s ease, visibility .8s ease;
+  }
+  #landing.leaving{ opacity:0; visibility:hidden; pointer-events:none; }
+
+  .art-frame{
+    position:relative;
+    width:min(88vw, 380px);
+  }
+  .art-bg{
+    display:block;
+    width:100%;
+    height:auto;
+    -webkit-user-drag:none;
+    user-select:none;
+  }
+  /* 看不見的 Enter 按鈕，對位方式見上方註解 */
+  .art-enter{
+    position:absolute;
+    left:36.2%; top:67.1%;
+    width:27.2%; height:7.3%;
+    background:transparent;
+    border:none; border-radius:4px;
+  }
+  .art-enter:focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+
+  /* ---------- 開場對話 ---------- */
+  #intro{
+    position:fixed; inset:0; z-index:6;
+    background:var(--paper);
+    transition:opacity .8s ease, visibility .8s ease;
+  }
+  #intro.leaving{ opacity:0; visibility:hidden; pointer-events:none; }
+  #intro[hidden]{ display:none; }
+
+  .intro-stage{
+    position:relative;
+    width:100%; height:100%;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding:24px;
+    cursor:pointer;
+  }
+  .intro-char{
+    width:min(46vw, 220px);
+    height:auto;
+    image-rendering:pixelated; /* 保留像素圖銳利邊緣；如果角色圖不是像素風可以刪掉這行 */
+    -webkit-user-drag:none; user-select:none;
+  }
+  .intro-skip{
+    margin-top:16px;
+    font-size:.72rem; letter-spacing:.15em;
+    color:var(--ink-faint);
+    border:1px solid var(--line);
+    border-radius:999px;
+    padding:6px 18px;
+    transition:border-color .2s ease, color .2s ease;
+  }
+  .intro-skip:hover, .intro-skip:focus-visible{ color:var(--ink); border-color:var(--ink); }
+
+  .intro-dialogue{
+    position:relative;
+    width:min(88vw, 440px);
+    margin-top:28px;
+    background:var(--paper);
+    border:2px solid var(--ink);
+    border-radius:8px;
+    padding:18px 20px;
+    min-height:70px;
+  }
+  .intro-dialogue p{
+    font-size:.92rem; line-height:1.8; color:var(--ink);
+    min-height:2.6em;
+  }
+  .intro-continue{
+    position:absolute; right:16px; bottom:10px;
+    font-size:.75rem; color:var(--ink-faint);
+    animation:bob 1.4s ease-in-out infinite;
+  }
+  @keyframes bob{
+    0%,100%{ transform:translateY(0); }
+    50%{ transform:translateY(4px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .intro-continue{ animation:none; }
+  }
+
+  /* ---------- 手記頁 ---------- */
+  #journal{
+    position:fixed; inset:0; z-index:5;
+    display:flex; align-items:center; justify-content:center;
+    padding:20px;
+    background:var(--paper-dim);
+    overflow-y:auto; /* 萬一圖片比視窗還高，至少可以捲動看到，不會整個消失 */
+  }
+  #journal[hidden]{ display:none; }
+
+  .journal-frame{
+    position:relative;
+    width:min(92vw, 1020px);
+  }
+  .journal-bg{
+    display:block;
+    width:100%;
+    height:auto;
+    -webkit-user-drag:none;
+    user-select:none;
+  }
+  #journal-tabs{ position:absolute; inset:0; z-index:3; pointer-events:none; }
+  .journal-tab{
+    position:absolute;
+    background:transparent; /* 對位時可暫時改成 rgba(255,0,0,.3) 方便看 */
+    border:none;
+    cursor:pointer;
+    pointer-events:auto;
+  }
+  .journal-tab:focus-visible{ outline:2px solid var(--amber); outline-offset:2px; }
+
+  /* 底部三欄：左邊返回主頁、中間提示文字、右邊企劃頁，疊在圖片下緣 */
+  .journal-nav-row{
+    position:absolute;
+    left:0; right:0; bottom:10px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 16px;
+  }
+  .journal-caption{
+    font-size:12px;
+    color:#8a2c24;
+    letter-spacing:.05em;
+    text-align:center;
+    pointer-events:none;
+  }
+  .journal-nav-link{
+    font-size:.72rem; letter-spacing:.1em;
+    color:var(--ink-faint);
+    white-space:nowrap;
+  }
+  .journal-nav-link:hover, .journal-nav-link:focus-visible{ color:var(--ink); }
+
+  /* 點日期標籤跳出的小視窗：跟「同人創作」分頁一樣的卡片網格版面 */
+  .journal-panel{
+    position:fixed; inset:0; z-index:8;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(28,28,27,.6);
+    padding:24px;
+  }
+  .journal-panel[hidden]{ display:none; }
+  .journal-panel-card{
+    position:relative;
+    width:min(94vw, 880px);
+    max-height:85vh;
+    overflow-y:auto;
+    background:var(--paper);
+    border-radius:12px;
+    padding:32px 28px 28px;
+  }
+  .journal-panel-close{
+    position:absolute; right:16px; top:12px;
+    font-size:1.4rem; line-height:1; color:var(--ink-faint);
+  }
+  .journal-panel-close:hover{ color:var(--ink); }
+  .journal-panel-title{
+    font-family:var(--serif); font-weight:600; font-size:1.3rem;
+    letter-spacing:.08em;
+    margin-bottom:24px;
+  }
+  .journal-panel-list{
+    display:grid; gap:20px;
+    grid-template-columns:repeat(4, 1fr); /* 固定十二宮格：4欄 x 3列 */
+  }
+  @media (max-width:640px){
+    .journal-panel-list{ grid-template-columns:repeat(2, 1fr); } /* 手機改 2 欄，一樣 12 格、變 6 列 */
+  }
+  .journal-work-card{ display:flex; flex-direction:column; }
+  .journal-work-thumb{
+    aspect-ratio:4/5; border-radius:6px;
+    background:linear-gradient(155deg, var(--paper-dim), var(--moss-soft));
+    border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    color:var(--ink-faint); font-size:.8rem; letter-spacing:.1em;
+    overflow:hidden;
+  }
+  .journal-work-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .journal-work-title{ margin-top:14px; font-size:.95rem; font-weight:500; }
+  .journal-work-meta{ margin-top:4px; font-size:.8rem; color:var(--ink-faint); }
+  .journal-work-tag{
+    display:inline-block; margin-top:8px;
+    font-size:.7rem; letter-spacing:.08em; color:var(--moss);
+    border:1px solid var(--moss); border-radius:999px; padding:3px 10px;
+  }
+  /* 還沒放作品的空格：虛線框，維持十二宮格的完整版面 */
+  .journal-work-card.is-empty .journal-work-thumb{
+    background:transparent;
+    border-style:dashed;
+    border-color:var(--line);
+  }
+  .journal-panel-empty{ color:var(--ink-faint); font-size:.88rem; }
+
+  /* 縮圖有圖片的話滑鼠移過去顯示手指，提示可以點開大圖 */
+  .journal-work-thumb.has-img{ cursor:pointer; }
+
+  /* 點縮圖彈出的完整大圖燈箱 */
+  .lightbox{
+    position:fixed; inset:0; z-index:20;
+    background:rgba(10,10,10,.88);
+    display:flex; align-items:center; justify-content:center;
+    padding:32px;
+  }
+  .lightbox[hidden]{ display:none; }
+  .lightbox img{
+    max-width:92vw; max-height:88vh;
+    border-radius:6px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5);
+  }
+  .lightbox-close{
+    position:absolute; right:20px; top:16px;
+    font-size:1.8rem; line-height:1; color:#fff; opacity:.8;
+  }
+  .lightbox-close:hover{ opacity:1; }
+
+
+  /* ---------- 企劃頁 ---------- */
+  #plan-page{
+    position:fixed; inset:0; z-index:5;
+    display:flex; align-items:center; justify-content:center;
+    padding:24px;
+    background:var(--paper-dim);
+    overflow-y:auto;
+  }
+  #plan-page[hidden]{ display:none; }
+  .plan-card{
+    position:relative;
+    width:min(92vw, 640px);
+    background:var(--paper);
+    border-radius:12px;
+    padding:56px 36px 40px;
+  }
+  .plan-back{
+    position:absolute; left:24px; top:22px;
+  }
+  .plan-title{
+    font-family:var(--serif); font-weight:600;
+    font-size:clamp(1.6rem, 4vw, 2rem);
+    letter-spacing:.14em;
+    text-align:center;
+    margin-bottom:32px;
+  }
+  .plan-text p{
+    font-size:.95rem; line-height:1.9; color:var(--ink-soft);
+    margin-bottom:22px;
+  }
+  .plan-text p:last-child{ margin-bottom:0; }
+  .plan-credits-btn{
+    display:block;
+    margin:36px auto 0;
+    padding:12px 32px;
+    font-size:.85rem; letter-spacing:.2em;
+    border:1px solid var(--ink);
+    border-radius:999px;
+    color:var(--ink);
+    transition:background .25s ease, color .25s ease;
+  }
+  .plan-credits-btn:hover{ background:var(--ink); color:var(--paper); }
+
+  /* ---- 參與人員（彈出視窗裡沿用這組樣式）---- */
+  .credit-group{ margin-bottom:32px; }
+  .credit-group:last-child{ margin-bottom:0; }
+  .credit-role{
+    font-family:var(--serif); font-size:1rem; letter-spacing:.1em; color:var(--ink);
+    margin-bottom:16px;
+    padding-bottom:8px; border-bottom:1px solid var(--line);
+  }
+  .credit-names{ display:flex; flex-wrap:wrap; gap:10px; }
+  .credit-chip{
+    font-size:.85rem; padding:7px 16px;
+    border:1px solid var(--line); border-radius:999px;
+    color:var(--ink-soft);
+    transition:border-color .25s ease, color .25s ease;
+  }
+  .credit-chip:hover{ border-color:var(--moss); color:var(--ink); }
+
+  @media (max-width:600px){
+    .plan-card{ padding:56px 22px 32px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 轉場黑幕：切換場景時先淡到全黑，再淡出顯示下一個畫面 -->
+<div id="transition-veil" aria-hidden="true"></div>
+
+<!-- ========== 首頁 ========== -->
+<section id="landing">
+  <div id="landing-particles" aria-hidden="true"></div>
+  <div class="art-frame">
+    <!-- 把 src 換成你畫好的整張首頁圖 -->
+    <img class="art-bg" src="images/page-home.png" alt="ticket 紀念企劃 首頁">
+
+    <!-- 看不見的按鈕，蓋在你圖片畫的 Enter 位置上，對位方式見上方 CSS 註解 -->
+    <button id="enter-btn" class="art-enter" aria-label="進入"></button>
+  </div>
+</section>
+
+<!-- ========== 開場對話：只有第一次進站會看到，可隨時 Skip ========== -->
+<section id="intro" hidden>
+  <div class="intro-stage" id="intro-stage">
+    <!-- 角色圖片：換成你的角色圖 -->
+    <img class="intro-char" src="images/character-intro.png" alt="角色">
+
+    <!-- Skip：隨時可以跳過對話直接進站 -->
+    <button id="skip-btn" class="intro-skip">SKIP »</button>
+
+    <div class="intro-dialogue">
+      <p id="intro-text"></p>
+      <span class="intro-continue" id="intro-continue">▼</span>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 手記頁：對話結束後看到的畫面 ==========
+     只需要「一張」整體圖，存成 images/journal-page.png。
+     右側 .journal-tab 是蓋在圖片上「9/4、9/5...」那排標籤上的
+     透明按鈕，點了會跳出一個小視窗列出當天的作品（文字+縮圖），
+     不需要另外畫圖——內容在下面 JS 的 JOURNAL_WORKS 那個資料裡改就好
+     =================================================== -->
+<section id="journal" hidden>
+  <div class="journal-frame">
+    <img id="journal-bg" class="journal-bg" src="images/journal-page.png" alt="手記">
+    <div id="journal-tabs"></div>
+
+    <div class="journal-nav-row">
+      <a href="#" id="journal-back" class="journal-nav-link">← 返回主頁</a>
+      <p class="journal-caption">請點擊對應日期查看作品</p>
+      <a href="#" id="journal-plan" class="journal-nav-link">企劃頁 →</a>
+    </div>
+  </div>
+
+  <!-- 點日期標籤跳出的小視窗 -->
+  <div id="journal-panel" class="journal-panel" hidden>
+    <div class="journal-panel-card">
+      <button id="journal-panel-close" class="journal-panel-close" aria-label="關閉">×</button>
+      <h3 id="journal-panel-title" class="journal-panel-title"></h3>
+      <div id="journal-panel-list" class="journal-panel-list"></div>
+    </div>
+  </div>
+
+  <!-- 點作品縮圖彈出的完整大圖 -->
+  <div id="lightbox" class="lightbox" hidden>
+    <button id="lightbox-close" class="lightbox-close" aria-label="關閉">×</button>
+    <img id="lightbox-img" src="" alt="">
+  </div>
+</section>
+
+<!-- ========== 企劃頁 ========== -->
+<section id="plan-page" hidden>
+  <div class="plan-card">
+    <a href="#" id="plan-back" class="journal-nav-link plan-back">← 返回</a>
+    <h1 class="plan-title">企劃頁</h1>
+    <div class="plan-text">
+      <p>這裡是2026年的團酷日紀念企劃頁，在此我們集結了許多位同好的創作作品，如果你能夠一起享受就太好了！</p>
+      <p>こちらは2026年のクロクラの日記念企画ページです。たくさんの方の創作作品をまとめましたので、一緒に楽しんでいただければ幸いです！</p>
+      <p>Welcome to the 2026 Kurokura Day commemorative project page! We have gathered many creative works from fellow fans here, and we would be so happy if you could enjoy them together with us!</p>
+    </div>
+    <button id="plan-credits-btn" class="plan-credits-btn" type="button">參與人員</button>
+  </div>
+
+  <!-- 參與人員：另外彈出的視窗 -->
+  <div id="credits-panel" class="journal-panel" hidden>
+    <div class="journal-panel-card">
+      <button id="credits-panel-close" class="journal-panel-close" aria-label="關閉">×</button>
+      <h3 class="journal-panel-title">參與人員</h3>
+      <div id="credits-panel-list"></div>
+    </div>
+  </div>
+</section>
+
+<script>
+/* ===================================================================
+   == 內容資料區 ==
+   要新增/修改內容，只需要編輯以下三個陣列，不用動版面的程式碼。
+   =================================================================== */
+
+// ---- 參與人員：role（分組名稱）、names（名字陣列） ----
+const CREDITS = [
+  { role:'參與人員', names:[
+    'Zesty橘之','snow-urial','派派咕','shuka_魚','林以寧Elin',
+    '黑色的眼与红色的眼','月亮暮','Eden_XQ','solivagant_6','扁雀化坨',
+    '惊棠堂糖溏','空斐咖啡','藻味','KYOUKA_zZ','就此擱筆冬眠0',
+    'theresnoreplica','月亮上的旅行者','奔向汹涌','自走鱿型哈哈哈','挂在路边的灯芯',
+    '松露海胆帝王蟹盖饭','若妳眼中倒映我（晚上九點）','Loveisourchains','北冥有鱼99','冰糖小鸭aler',
+    'Horasa_K','四方莲绪（晚上七点）','纳纳HL','无语朵朵朵','芝士一根忧郁的炸薯条',
+    '记忆薏月','我有一顆只屬於你的心','月城陽','谁要和你明年见','昵称不可以为空22543',
+    '西秀吃饭两则','口区区- (周末)','EE_linko','倒山火_','LiGht',
+    '晓晓一只枭','呗','奶嗝受','蓝信一的逼','sunspotcycle',
+    'onelast','横冲直撞猫猫球','永坠星海之夜','肉肉决定摆烂','集帅受',
+    '狸求少主收养的那个雨夜','望不穿你眼','靈樞交合','潜水鱼o-o','祁叨叨',
+    '薛吹清子_3','wishmemiso','与鹤暮隐','枝品如','兀栀qizhi',
+    'Sariko寿司卷','折耳蜗','-Externalself-','manazashinukumori','Roku63',
+    'Libimotitus（晚上九点）','未来如风','鲜花往回缩','长长长长眠冰','浮岛圆仔',
+    '茉莉浪浪浪','iki4253','溏心日召好吃','吊车尾的有什么高见啊','mikkil_kka',
+    '比起咖喱我更喜欢面包','认识你没兴趣','篠筱莜攸',
+  ]},
+];
+
+// ---- 開場對話：每一項是一句台詞，訪客每點一下畫面就換下一句 ----
+const DIALOGUE = [
+  '你好。',
+  '這裡是2026年的團酷日紀念網站。',
+  '在此我們集結了近百名的創作者。',
+  '現在，一起進去看看吧。',
+];
+
+// ---- 手記頁的日期分頁 ----
+// key：對應下面 JOURNAL_WORKS 資料裡的日期
+// left/top/width/height：右側日期標籤在圖片上的熱區座標（百分比，已用座標拾取工具量測）
+const JOURNAL_DATES = [
+  { label:'9/4',  key:'0904', left:86.9, top:24.5, width:5.1, height:3.6 },
+  { label:'9/5',  key:'0905', left:87.0, top:28.1, width:5.1, height:3.4 },
+  { label:'9/6',  key:'0906', left:86.6, top:33.9, width:4.9, height:3.3 },
+  { label:'9/7',  key:'0907', left:86.4, top:40.0, width:5.8, height:4.5 },
+  { label:'9/8',  key:'0908', left:85.6, top:46.8, width:5.4, height:3.9 },
+  { label:'9/9',  key:'0909', left:85.6, top:53.0, width:5.8, height:4.2 },
+  { label:'9/10', key:'0910', left:85.1, top:59.6, width:6.6, height:3.9 },
+  { label:'9/11', key:'0911', left:85.4, top:65.0, width:5.6, height:4.1 },
+  { label:'9/12', key:'0912', left:85.1, top:69.1, width:6.2, height:5.8 },
+  { label:'9/13', key:'0913', left:84.9, top:75.7, width:6.3, height:3.5 },
+  { label:'9/14', key:'0914', left:80.5, top:79.0, width:4.7, height:5.7 },
+  { label:'9/15', key:'0915', left:76.2, top:78.4, width:3.0, height:5.6 },
+];
+
+// ---- 每個日期底下要展示的作品 ----
+// key 要跟上面 JOURNAL_DATES 的 key 對應
+// 每個作品：title（作品名）、author（作者）、tag（分類標籤，例如插畫/漫畫）、
+// img（縮圖路徑，沒有的話整行刪掉，會顯示「作品預覽」佔位框）
+// 想加/刪作品，直接在對應日期的陣列裡增減物件就好，不用畫新圖
+const JOURNAL_WORKS = {
+  '0904': [
+    { title:'作品標題 01', author:'@創作者暱稱', tag:'插畫', img:'images/works/0904-1.png' },
+    { title:'作品標題 02', author:'@創作者暱稱', tag:'漫畫' },
+  ],
+  '0905': [],
+  '0906': [],
+  '0907': [],
+  '0908': [],
+  '0909': [],
+  '0910': [],
+  '0911': [],
+  '0912': [],
+  '0913': [],
+  '0914': [],
+  '0915': [],
+};
+
+/* ===================================================================
+   == 以下為渲染與互動邏輯，通常不需要修改 ==
+   =================================================================== */
+
+// 「參與人員」彈窗渲染：點按鈕時才呼叫，不用一開始就渲染
+function renderCreditsPanel(){
+  const list = document.getElementById('credits-panel-list');
+  list.innerHTML = '';
+  CREDITS.forEach(group=>{
+    const el = document.createElement('div');
+    el.className = 'credit-group';
+    el.innerHTML = `
+      <div class="credit-role">${group.role}</div>
+      <div class="credit-names">
+        ${group.names.map(n=>`<span class="credit-chip">${n}</span>`).join('')}
+      </div>
+    `;
+    list.appendChild(el);
+  });
+}
+
+// 渲染手記頁的日期分頁熱區
+const journalTabsEl = document.getElementById('journal-tabs');
+JOURNAL_DATES.forEach(d=>{
+  const b = document.createElement('button');
+  b.className = 'journal-tab';
+  b.type = 'button';
+  b.style.left = d.left + '%';
+  b.style.top = d.top + '%';
+  b.style.width = d.width + '%';
+  b.style.height = d.height + '%';
+  b.dataset.key = d.key;
+  b.dataset.label = d.label;
+  b.setAttribute('aria-label', d.label + ' 分頁');
+  journalTabsEl.appendChild(b);
+});
+
+// 小視窗：顯示該日期的作品清單
+const journalPanel = document.getElementById('journal-panel');
+const journalPanelTitle = document.getElementById('journal-panel-title');
+const journalPanelList = document.getElementById('journal-panel-list');
+const journalPanelClose = document.getElementById('journal-panel-close');
+
+const JOURNAL_GRID_SIZE = 12; // 固定十二宮格，改這個數字可以調格數（要記得同步調整 CSS 欄數）
+
+function openJournalPanel(label, key){
+  journalPanelTitle.textContent = label;
+  const works = JOURNAL_WORKS[key] || [];
+  journalPanelList.innerHTML = '';
+
+  for(let i=0; i<JOURNAL_GRID_SIZE; i++){
+    const w = works[i];
+    const item = document.createElement('div');
+
+    if(w){
+      item.className = 'journal-work-card';
+      item.innerHTML = `
+        <div class="journal-work-thumb${w.img ? ' has-img' : ''}" ${w.img ? `data-full="${w.img}"` : ''}>
+          ${w.img ? `<img src="${w.img}" alt="${w.title}">` : '<span>作品預覽</span>'}
+        </div>
+        <div class="journal-work-title">${w.title}</div>
+        <div class="journal-work-meta">${w.author || ''}</div>
+        ${w.tag ? `<span class="journal-work-tag">${w.tag}</span>` : ''}
+      `;
+    } else {
+      // 還沒放作品的空格，維持十二宮格版面完整
+      item.className = 'journal-work-card is-empty';
+      item.innerHTML = `<div class="journal-work-thumb"><span>尚未新增</span></div>`;
+    }
+    journalPanelList.appendChild(item);
+  }
+  journalPanel.hidden = false;
+}
+
+// 事件委派：點哪個日期標籤，一次點擊直接開啟該日期的作品清單
+journalTabsEl.addEventListener('click', (e)=>{
+  const btn = e.target.closest('.journal-tab');
+  if(!btn) return;
+  openJournalPanel(btn.dataset.label, btn.dataset.key);
+});
+
+// 關閉小視窗：點 × 或點背景灰色區域都可以關
+journalPanelClose.addEventListener('click', ()=>{ journalPanel.hidden = true; });
+journalPanel.addEventListener('click', (e)=>{
+  if(e.target === journalPanel) journalPanel.hidden = true;
+});
+
+// 點有圖片的縮圖，彈出完整大圖（燈箱）
+const lightbox = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+const lightboxClose = document.getElementById('lightbox-close');
+
+journalPanelList.addEventListener('click', (e)=>{
+  const thumb = e.target.closest('.journal-work-thumb.has-img');
+  if(!thumb) return;
+  lightboxImg.src = thumb.dataset.full;
+  lightboxImg.alt = thumb.querySelector('img')?.alt || '';
+  lightbox.hidden = false;
+});
+
+function closeLightbox(){ lightbox.hidden = true; lightboxImg.src = ''; }
+lightboxClose.addEventListener('click', closeLightbox);
+lightbox.addEventListener('click', (e)=>{
+  if(e.target === lightbox) closeLightbox();
+});
+
+// 「返回主頁」：收起手記頁，回到最一開始的票券首頁
+document.getElementById('journal-back').addEventListener('click', (e)=>{
+  e.preventDefault();
+  document.getElementById('journal').hidden = true;
+  const landing = document.getElementById('landing');
+  landing.classList.remove('leaving');
+  landing.style.display = ''; // 交還給 CSS 預設的 display:flex
+});
+
+// 「企劃頁」：從手記頁進入新的企劃頁
+document.getElementById('journal-plan').addEventListener('click', (e)=>{
+  e.preventDefault();
+  document.getElementById('journal').hidden = true;
+  document.getElementById('plan-page').hidden = false;
+});
+
+// 企劃頁「← 返回」：回到手記頁
+document.getElementById('plan-back').addEventListener('click', (e)=>{
+  e.preventDefault();
+  document.getElementById('plan-page').hidden = true;
+  document.getElementById('journal').hidden = false;
+});
+
+// 企劃頁「參與人員」按鈕：開啟彈出視窗
+const creditsPanel = document.getElementById('credits-panel');
+document.getElementById('plan-credits-btn').addEventListener('click', ()=>{
+  renderCreditsPanel();
+  creditsPanel.hidden = false;
+});
+document.getElementById('credits-panel-close').addEventListener('click', ()=>{
+  creditsPanel.hidden = true;
+});
+creditsPanel.addEventListener('click', (e)=>{
+  if(e.target === creditsPanel) creditsPanel.hidden = true;
+});
+
+// ========== 開場對話 ==========
+const introEl = document.getElementById('intro');
+const introStage = document.getElementById('intro-stage');
+const introText = document.getElementById('intro-text');
+const introContinue = document.getElementById('intro-continue');
+const skipBtn = document.getElementById('skip-btn');
+let introIndex = -1;
+
+function showLine(i){
+  introText.textContent = DIALOGUE[i] || '';
+  introContinue.style.visibility = (i < DIALOGUE.length - 1) ? 'visible' : 'hidden';
+}
+
+function advanceIntro(){
+  introIndex++;
+  if(introIndex >= DIALOGUE.length){
+    finishIntro();
+    return;
+  }
+  showLine(introIndex);
+}
+
+// 共用的黑幕轉場：先淡到全黑 → 執行畫面切換 → 再淡出黑幕
+// veilTime 要跟 CSS 裡 #transition-veil 的 transition 秒數一致（.6s）
+const veil = document.getElementById('transition-veil');
+const VEIL_MS = 600;
+function veilTransition(switchScene){
+  veil.classList.add('show');
+  setTimeout(()=>{
+    switchScene();
+    // 等畫面切換好、瀏覽器重繪一次之後，再開始淡出黑幕
+    requestAnimationFrame(()=>{
+      requestAnimationFrame(()=>{
+        veil.classList.remove('show');
+      });
+    });
+  }, VEIL_MS);
+}
+
+function finishIntro(){
+  introEl.classList.add('leaving');
+  document.getElementById('journal').hidden = false;
+  setTimeout(()=>{ introEl.style.display = 'none'; }, 800);
+}
+
+// 點畫面任何地方（除了 Skip 按鈕）就換下一句
+introStage.addEventListener('click', (e)=>{
+  if(e.target === skipBtn) return;
+  advanceIntro();
+});
+
+// Skip：隨時可以跳過，直接進主站
+skipBtn.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  finishIntro();
+});
+
+// 進入首頁按鈕：Enter → 黑幕轉場 → 開場對話
+document.getElementById('enter-btn').addEventListener('click', ()=>{
+  veilTransition(()=>{
+    document.getElementById('landing').style.display = 'none';
+
+    introEl.hidden = false;
+    introEl.style.display = '';
+    introEl.classList.remove('leaving');
+    introIndex = -1;
+    advanceIntro();
+  });
+});
+
+// 環境微光粒子（尊重使用者的「減少動態」偏好設定）
+if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+
+  // 首頁（票券畫面）粒子：以票券為中心，往外、往上緩慢飄散
+  // 寫成函式是因為視窗大小改變時，票券位置/大小會變，
+  // 需要重新抓一次座標、重新產生粒子，不然舊的粒子位置會跑掉
+  const field = document.getElementById('landing-particles');
+  const ticketEl = document.querySelector('.art-frame');
+
+  function spawnLandingParticles(){
+    if(!field || !ticketEl) return;
+    field.innerHTML = ''; // 清掉舊的粒子，避免重複疊加
+
+    const rect = ticketEl.getBoundingClientRect();
+    if(rect.width === 0 || rect.height === 0) return; // 圖片還沒載好，先跳過
+
+    const centerX = rect.left + rect.width/2;
+    const centerY = rect.top + rect.height/2;
+    const baseR = Math.max(rect.width, rect.height)/2;
+
+    const count = window.innerWidth < 600 ? 16 : 26;
+    for(let i=0;i<count;i++){
+      const p = document.createElement('span');
+      p.className = 'particle';
+      const size = 2 + Math.random()*3;               // 大小 2~5px
+      p.style.width = size + 'px';
+      p.style.height = size + 'px';
+
+      // 從票券中心往外一段距離的隨機角度、隨機半徑作為出生點
+      const angle = Math.random()*Math.PI*2;
+      const spawnR = baseR * (0.15 + Math.random()*0.55);
+      const spawnX = centerX + Math.cos(angle)*spawnR;
+      const spawnY = centerY + Math.sin(angle)*spawnR;
+      p.style.left = spawnX + 'px';
+      p.style.top = spawnY + 'px';
+
+      // 飄散方向＝延續同一個角度繼續往外，再疊加一股往上的力道
+      const outward = 50 + Math.random()*90;
+      const upwardBias = 90 + Math.random()*110;
+      const dx = Math.cos(angle)*outward;
+      const dy = Math.sin(angle)*outward - upwardBias;
+      p.style.setProperty('--dx', dx.toFixed(1) + 'px');
+      p.style.setProperty('--dy', dy.toFixed(1) + 'px');
+
+      p.style.animationDuration = (10 + Math.random()*8) + 's';  // 10~18 秒，緩慢
+      p.style.animationDelay = (Math.random()*6) + 's';
+      field.appendChild(p);
+    }
+  }
+
+  // 圖片載入完成後再算一次位置（避免圖片還沒讀完，票券高度算成 0）
+  window.addEventListener('load', spawnLandingParticles);
+  spawnLandingParticles(); // 先跑一次，圖片如果是快取的，這次就會是對的
+
+  // 視窗大小改變時，重新計算票券位置、重新產生粒子
+  // （用 200ms 的防抖，避免拖曳視窗邊框時瘋狂重算造成卡頓）
+  let resizeTimer;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(spawnLandingParticles, 200);
+  });
+}
+</script>
+</body>
+</html>
