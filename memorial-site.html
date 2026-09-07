@@ -362,12 +362,14 @@
   /* 多張圖片時的左右切換箭頭與張數指示 */
   .lightbox-nav{
     position:absolute; top:50%; transform:translateY(-50%);
-    font-size:2rem; line-height:1; color:#fff; opacity:.75;
-    padding:12px 16px;
+    font-size:1.7rem; line-height:1; color:#fff; opacity:1;
+    width:38px; height:68px;
+    display:flex; align-items:center; justify-content:center;
+    background:rgba(90,90,90,.45);
   }
-  .lightbox-nav:hover{ opacity:1; }
-  .lightbox-prev{ left:8px; }
-  .lightbox-next{ right:8px; }
+  .lightbox-nav:hover{ background:rgba(90,90,90,.65); }
+  .lightbox-prev{ left:0; padding-right:4px; border-radius:0 34px 34px 0; }
+  .lightbox-next{ right:0; padding-left:4px; border-radius:34px 0 0 34px; }
   .lightbox-nav[hidden]{ display:none; }
   .lightbox-counter{
     position:absolute; left:0; right:0; bottom:20px;
@@ -735,7 +737,7 @@ const JOURNAL_WORKS = {
       img:['images/works/0906-1-1.jpeg','images/works/0906-1-2.jpeg',
            'images/works/0906-1-3.jpeg','images/works/0906-1-4.jpeg'] },
     { title:'11:00', author:'蓝信一的逼', tag:'插畫/illust', img:'images/works/0906-2.jpeg' },
-    { title:'12:00', author:'未来如风', tag:'插畫/illust', img:'images/works/0906-3.jpeg' },
+    { title:'12:00', author:'未来如风（代发）', tag:'插畫/illust', img:'images/works/0906-3.jpeg' },
     { title:'13:00', author:'茉莉浪浪浪', tag:'插畫/illust', img:'images/works/0906-4.jpeg' },
     { title:'14:00', author:'mikkil_kka', tag:'插畫/illust',
       img:['images/works/0906-5-1.jpeg','images/works/0906-5-2.jpeg'] },
@@ -749,7 +751,23 @@ const JOURNAL_WORKS = {
            'images/works/0906-11-3.jpeg','images/works/0906-11-4.jpeg'] },
     { title:'21:00', author:'若妳眼中倒映我', tag:'插畫/illust', img:'images/works/0906-12.jpeg' },
   ],
-  '0907': [],
+  '0907': [
+    { title:'10:00', author:'茉莉浪浪浪', tag:'插畫/illust', img:'images/works/0907-1.jpeg' },
+    { title:'11:00', author:'EE_linko', tag:'插畫/illust', img:'images/works/0907-2.jpeg' },
+    { title:'12:00', author:'奶嗝受', tag:'插畫/illust', img:'images/works/0907-3.jpeg' },
+    { title:'13:00', author:'倒山火_', tag:'插畫/illust', img:'images/works/0907-4.jpeg' },
+    { title:'14:00', author:'LiGhtRahEir', tag:'插畫/illust', img:'images/works/0907-5.jpeg' },
+    { title:'15:00', author:'晓晓一只枭', tag:'遊戲/PCgame', img:'images/works/0907-6.gif', link:'https://drive.google.com/drive/folders/15mHcVeRAF1j0nmC-QvpuKQel0pEYJ-uX?usp=drive_link' },
+    { title:'16:00', author:'月亮晷', tag:'插畫/illust',
+      img:['images/works/0907-7-1.jpeg','images/works/0907-7-2.jpeg'] },
+    { title:'17:00', author:'惊棠堂糖溏', tag:'小說/novel', reader:true,
+      preview:'images/works/0907-8-preview.jpg', img:'images/works/0907-8.jpeg' },
+    { title:'18:00', author:'空斐咖啡', tag:'小說/novel', img:'images/works/0907-9.jpeg', link:'https://archiveofourown.org/works/91051406' },
+    { title:'19:00', author:'藻味', tag:'插畫/illust', img:'images/works/0907-10.jpeg' },
+    { title:'20:00', author:'Loveisourchains', tag:'插畫/illust',
+      img:['images/works/0907-11-1.gif','images/works/0907-11-2.gif'] },
+    { title:'21:00', author:'就此擱筆冬眠0', tag:'插畫/illust', img:'images/works/0907-12.jpeg' },
+  ],
   '0908': [],
   '0909': [],
   '0910': [],
