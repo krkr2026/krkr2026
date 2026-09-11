@@ -707,7 +707,7 @@ const JOURNAL_DATES = [
 //
 // 想加/刪作品，直接在對應日期的陣列裡增減物件就好
 //
-// ---- 特殊日期：只有一張圖，不要 12 格時段的 ----
+// ---- 特殊日期：只有一張圖的，不要 12 格時段的 ----
 // key 對應的日期，點右側熱區/下拉選單時會直接開大圖，不會跳出格子清單
 // 只要某個日期出現在這裡，JOURNAL_WORKS 裡對應的 12 格資料就不會用到
 const JOURNAL_SINGLE = {
@@ -806,7 +806,26 @@ const JOURNAL_WORKS = {
       img:['images/works/0909-11-1.jpeg','images/works/0909-11-2.jpeg'] },
     { title:'21:00', author:'谁要和你明年见', tag:'插畫/illust', img:'images/works/0909-12.jpeg' },
   ],
-  '0910': [],
+  '0910': [
+    { title:'10:00', author:'与鹤暮隐', img:'images/works/0910-1.jpg',
+      link:'https://archiveofourown.org/works/92311411' },
+    { title:'11:00', author:'西秀吃饭两则', img:'images/works/0910-2.jpeg',
+      preview:'images/works/0910-2-preview.gif',
+      link:'https://weibo.com/6720855821/5341554111939393' },
+    { title:'12:00', author:'记忆薏米', img:'images/works/0910-3.jpeg' },
+    { title:'13:00', author:'shuka_魚', ageGate:true,
+      preview:'images/works/0910-4-preview.jpeg', img:'images/works/0910-4.png' },
+    { title:'14:00', author:'theresnoreplica',
+      preview:'images/works/0910-5-preview.jpeg', img:'images/works/0910-5.jpeg',
+      link:'https://archiveofourown.org/works/92031221' },
+    { title:'15:00', author:'奶嗝受', img:'images/works/0910-6.jpeg' },
+    { title:'16:00', author:'月亮上的旅行者', img:'images/works/0910-7.jpeg' },
+    { title:'17:00', author:'奔向汹涌', img:'images/works/0910-8.jpeg' },
+    { title:'18:00', author:'Loveisourchains', img:'images/works/0910-9.jpeg' },
+    { title:'19:00', author:'横冲直撞猫猫球', img:'images/works/0910-10.jpeg' },
+    { title:'20:00', author:'自走鱿型呀哈哈', img:'images/works/0910-11.jpeg' },
+    { title:'21:00', author:'祁叨叨不想当社畜', img:'images/works/0910-12.jpeg' },
+  ],
   '0911': [],
   '0912': [],
   '0913': [],
