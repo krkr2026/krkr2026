@@ -676,16 +676,17 @@ const DIALOGUE = [
 // key：對應下面 JOURNAL_WORKS 資料裡的日期
 // left/top/width/height：右側日期標籤在圖片上的熱區座標（百分比，已用座標拾取工具量測）
 const JOURNAL_DATES = [
+  { label:'宣圖1', key:'promo1', left:86.9, top:20.0, width:5.1, height:3.6 },
   { label:'9/4',  key:'0904', left:86.9, top:24.5, width:5.1, height:3.6 },
   { label:'9/5',  key:'0905', left:87.0, top:28.1, width:5.1, height:3.4 },
   { label:'9/6',  key:'0906', left:86.6, top:33.9, width:4.9, height:3.3 },
   { label:'9/7',  key:'0907', left:86.4, top:40.0, width:5.8, height:4.5 },
-  { label:'9/8',  key:'0908', left:85.6, top:46.8, width:5.4, height:3.9 },
+  { label:'9/8(宣圖2)',  key:'0908', left:85.6, top:46.8, width:5.4, height:3.9 },
   { label:'9/9',  key:'0909', left:85.6, top:53.0, width:5.8, height:4.2 },
   { label:'9/10', key:'0910', left:85.1, top:59.6, width:6.6, height:3.9 },
   { label:'9/11', key:'0911', left:85.4, top:65.0, width:5.6, height:4.1 },
   { label:'9/12', key:'0912', left:85.1, top:69.1, width:6.2, height:5.8 },
-  { label:'9/13', key:'0913', left:84.9, top:75.7, width:6.3, height:3.5 },
+  { label:'9/13(宣圖3)', key:'0913', left:84.9, top:75.7, width:6.3, height:3.5 },
   { label:'9/14', key:'0914', left:80.5, top:79.0, width:4.7, height:5.7 },
   { label:'9/15', key:'0915', left:76.2, top:78.4, width:3.0, height:5.6 },
 ];
@@ -711,7 +712,9 @@ const JOURNAL_DATES = [
 // key 對應的日期，點右側熱區/下拉選單時會直接開大圖，不會跳出格子清單
 // 只要某個日期出現在這裡，JOURNAL_WORKS 裡對應的 12 格資料就不會用到
 const JOURNAL_SINGLE = {
+  'promo1': { img:'images/works/promo1.jpeg', link:'https://weibo.com/7944954917/5337719836509337' },
   '0908': { img:'images/works/0908-promo.jpg', link:'https://weibo.com/7944954917/5340663228142401' },
+  '0913': { img:'images/works/0913-promo.jpeg', link:'https://weibo.com/7944954917/5342475189485857' },
 };
 
 const JOURNAL_WORKS = {
@@ -869,8 +872,49 @@ const JOURNAL_WORKS = {
     { title:'21:00', author:'manazashinukumori', tag:'插畫/illust', img:'images/works/0912-12.jpeg' },
   ],
   '0913': [],
-  '0914': [],
-  '0915': [],
+  '0914': [
+    { title:'10:00', author:'扁雀化坨', tag:'小說/novel', img:'images/works/0914-1.jpeg',
+      link:'https://archiveofourown.org/works/92552046' },
+    { title:'11:00', author:'snow_urial', tag:'遊戲/PCgame', img:'images/works/0914-2.jpeg',
+      link:'https://drive.google.com/file/d/1abIOf27gBvotxxodsnAPQlUFjulNMt9l/view' },
+    { title:'12:00', author:'shuka_魚', tag:'插畫/illust', img:'images/works/0914-3.jpeg' },
+    { title:'13:00', author:'-Eternalself-', tag:'插畫/illust', img:'images/works/0914-4.jpeg' },
+    { title:'14:00', author:'北冥有雨99', tag:'插畫/illust',
+      img:['images/works/0914-5-1.jpeg','images/works/0914-5-2.jpeg'] },
+    { title:'15:00', author:'自走鱿型呀哈哈', tag:'插畫/illust', img:'images/works/0914-6.jpeg' },
+    { title:'16:00', author:'林以寧Elin', tag:'插畫/illust',
+      img:['images/works/0914-7-1.jpeg','images/works/0914-7-2.jpeg','images/works/0914-7-3.jpeg'] },
+    { title:'17:00', author:'御海莹胧', tag:'手書/pv', img:'images/works/0914-8.jpeg',
+      link:'https://video.weibo.com/show?fid=1034:5343046255181859' },
+    { title:'18:00', author:'theresnoreplica', tag:'插畫/illust', img:'images/works/0914-9.jpeg' },
+    { title:'19:00', author:'Loveisourchains', tag:'插畫/illust', img:'images/works/0914-10.jpeg' },
+    { title:'20:00', author:'Roku63', tag:'插畫/illust', img:'images/works/0914-11.png' },
+    { title:'21:00', author:'鲜花往回缩', tag:'小說/novel', img:'images/works/0914-12.jpeg',
+      link:'https://archiveofourown.org/works/92587931' },
+  ],
+  '0915': [
+    { title:'10:00', author:'自走鱿型呀哈哈', tag:'插畫/illust', img:'images/works/0915-1.jpeg' },
+    { title:'11:00', author:'橫冲直撞猫猫球', tag:'插畫/illust', img:'images/works/0915-2.jpeg' },
+    { title:'12:00', author:'肉肉决定摆烂', tag:'小說/novel', img:'images/works/0915-3.jpeg',
+      link:'https://archiveofourown.org/works/92588131' },
+    { title:'13:00', author:'记忆薏米', tag:'游標/cursor', img:'images/works/0915-4.gif',
+      link:'https://drive.google.com/file/d/1scnJG7EBHRePRwG7f9RUEThM30JvgRUK/view?usp=sharing' },
+    { title:'14:00', author:'Zesty橘之', tag:'小說/novel', img:'images/works/0915-5.jpeg' },
+    { title:'15:00', author:'松露海胆帝王蟹盖饭', tag:'小說/novel', img:'images/works/0915-6.jpeg',
+      link:'https://archiveofourown.org/works/92636266' },
+    { title:'16:00', author:'Loveisourchains', tag:'插畫/illust',
+      preview:'images/works/0915-7-preview.jpeg',
+      img:['images/works/0915-7-1.jpeg','images/works/0915-7-2.jpeg','images/works/0915-7-3.jpeg',
+           'images/works/0915-7-4.jpeg','images/works/0915-7-5.jpeg','images/works/0915-7-6.jpeg',
+           'images/works/0915-7-7.jpeg','images/works/0915-7-8.jpeg'] },
+    { title:'17:00', author:'浮岛圆仔', tag:'插畫/illust',
+      img:['images/works/0915-8-1.jpeg','images/works/0915-8-2.jpeg'] },
+    { title:'18:00', author:'iki4253', tag:'插畫/illust', img:'images/works/0915-9.jpeg' },
+    { title:'19:00', author:'篠筱莜攸', tag:'插畫/illust', img:'images/works/0915-10.jpeg' },
+    { title:'20:00', author:'溏心日召好吃', tag:'插畫/illust', img:'images/works/0915-11.jpeg' },
+    { title:'21:00', author:'吊车尾的有什么高见啊', tag:'插畫/illust',
+      img:['images/works/0915-12-1.jpeg','images/works/0915-12-2.jpeg'] },
+  ],
 };
 
 // 確保「每一天」都有固定 12 個時段：10:00 ~ 21:00
